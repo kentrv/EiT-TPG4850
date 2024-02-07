@@ -6,5 +6,6 @@ scikit-learn
 Pillow
 pandas
 scipy
-h5py
-tqdm
+open3d
+trimesh
+pyqt5

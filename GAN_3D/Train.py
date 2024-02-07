@@ -1,7 +1,7 @@
 import torch
 from Discriminator import Discriminator
 from Generator import Generator
-from Dataloader import Custom3DDataset
+from ShapeNetVoxelizer import Custom3DDataset
 from torch.utils.data import DataLoader
 
 input_size = 32 # Adjust this based on your data size (32 if 32x32x32, 64 if 64x64x64, etc.)
