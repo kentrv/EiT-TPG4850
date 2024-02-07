@@ -1,29 +1,28 @@
 from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
 import os
-import open3d as o3d
 import numpy as np
 import matplotlib
-#matplotlib.use('agg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-from mpl_toolkits.mplot3d import Axes3D
 
 
 if __name__ == "__main__":
-    voxelizer = ShapeNetVoxelizer(resolution=32)
+    voxelizer = ShapeNetVoxelizer(resolution=128)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     print(voxel_array.shape)  # Should print (32, 32, 32)
-    print(np.unique(voxel_array, return_counts=True))
+    
+    
+    # Create a figure and a 3D axis
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # Get the coordinates of filled voxels
-    x, y, z = np.indices(voxel_array.shape)
-    x, y, z = x[voxel_array == 1], y[voxel_array == 1], z[voxel_array == 1]
+    # Get the indices of the filled voxels
+    filled_indices = np.argwhere(voxel_array == 1)
 
-    # Plot filled voxels
-    ax.scatter(x, y, z, zdir='z', c='red', marker='s')
+    # Plot the filled voxels as a 3D scatter plot
+    ax.scatter(filled_indices[:, 0], filled_indices[:, 1], filled_indices[:, 2], c='red', marker='s')
 
     # Set plot labels and title
     ax.set_xlabel('X')
@@ -31,8 +30,4 @@ if __name__ == "__main__":
     ax.set_zlabel('Z')
     ax.set_title('Voxel Visualization')
 
-    # Adjust the viewing angle if needed
-    ax.view_init(elev=20, azim=30)
-    
-    #plt.savefig('voxel_visualization.png')
     plt.show()
