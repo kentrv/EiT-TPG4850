@@ -2,13 +2,13 @@ from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
 import os
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
 
 if __name__ == "__main__":
-    voxelizer = ShapeNetVoxelizer(resolution=128)
+    voxelizer = ShapeNetVoxelizer(resolution=64)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     print(voxel_array.shape)  # Should print (32, 32, 32)

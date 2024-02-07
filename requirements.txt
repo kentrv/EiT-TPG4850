@@ -9,4 +9,4 @@ scipy
 open3d
 trimesh
 opencv-python-headless
-pyqt5==5.15.2
+#pyqt5==5.15.2
