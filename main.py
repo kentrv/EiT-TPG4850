@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
-    voxelizer = ShapeNetVoxelizer(resolution=64)
+    voxelizer = ShapeNetVoxelizer(resolution=32)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     print(voxel_array.shape)  # Should print (32, 32, 32)
