@@ -24,8 +24,8 @@ class ShapeNetVoxelizer:
             mesh = loaded
 
         # Ensure the mesh is triangulated
-        if not mesh.is_empty and hasattr(mesh, 'faces'):
-            mesh = mesh.split()[0]  # Split into individual components and take the first, if necessary
+        #if not mesh.is_empty and hasattr(mesh, 'faces'):
+            #mesh = mesh.split()[0]  # Split into individual components and take the first, if necessary
             #mesh = mesh.triangulate()
 
         # Convert to Open3D mesh
