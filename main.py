@@ -1,5 +1,6 @@
 from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
 from GAN_3D.Discriminator import Discriminator
+from GAN_3D.Generator import Generator
 import os
 import numpy as np
 import matplotlib
@@ -20,19 +21,18 @@ if __name__ == "__main__":
     dataloader = DataLoader(voxel_array, batch_size=32, shuffle=True)
     (i, data) = zip(*enumerate(dataloader))
     data = data[0]
-    # 
+    generator = Generator(input_size=[64, 1, 32, 32, 32])
     discriminator = Discriminator(input_size=[64, 1, 32, 32, 32])
-    print(data)
     output = discriminator(voxel_tensor)
-    print(output)
-    
-    """
+    output = generator(voxel_tensor)
+    voxel_array = output.detach().numpy()[0][0]
+    print(voxel_array)  
     # Create a figure and a 3D axis
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     # Get the indices of the filled voxels
-    filled_indices = np.argwhere(voxel_array == 1)
+    filled_indices = voxel_array #np.argwhere(voxel_array == 1)
 
     # Plot the filled voxels as a 3D scatter plot
     ax.scatter(filled_indices[:, 0], filled_indices[:, 1], filled_indices[:, 2], c='red', marker='s')
@@ -44,4 +44,3 @@ if __name__ == "__main__":
     ax.set_title('Voxel Visualization')
 
     plt.show()
-    """

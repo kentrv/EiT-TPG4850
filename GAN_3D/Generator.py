@@ -3,23 +3,30 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size):
         super(Generator, self).__init__()
         self.encoder = nn.Sequential(
-            nn.Conv3d(1, 32, kernel_size=4, stride=2, padding=1), 
-            nn.LeakyReLU(0.2),
-            nn.Conv3d(32, 64, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(64),
-            nn.LeakyReLU(0.2),
-            # Add more layers as necessary
+        nn.Conv3d(1, 64, kernel_size=5, stride=2, padding=2),
+        nn.BatchNorm3d(64),
+        nn.ReLU(),
+        nn.Conv3d(64, 128, kernel_size=5, stride=2, padding=2),
+        nn.BatchNorm3d(128),
+        nn.ReLU(),
+        nn.Conv3d(128, 256, kernel_size=5, stride=2, padding=2),
+        nn.BatchNorm3d(256),
+        nn.ReLU(),
         )
+        
+        
         self.decoder = nn.Sequential(
-            nn.ConvTranspose3d(64, 32, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm3d(32),
+            nn.ConvTranspose3d(256, 128, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.BatchNorm3d(128),
             nn.ReLU(),
-            nn.ConvTranspose3d(32, 1, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose3d(128, 64, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.BatchNorm3d(64),
+            nn.ReLU(),
+            nn.ConvTranspose3d(64, 1, kernel_size=5, stride=2, padding=2, output_padding=1),
             nn.Tanh(),
-            # Add more layers as necessary
         )
 
     def forward(self, x):
