@@ -8,13 +8,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
-
+from sklearn.decomposition import PCA
 
 
 if __name__ == "__main__":
+    pca = PCA(n_components=3)
     voxelizer = ShapeNetVoxelizer(resolution=32)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
+    aligned_array = pca.fit_transform(np.array([voxel_array]).reshape(1, -1))
+    print(aligned_array)
     voxel_array = np.array([[voxel_array]])
     #print(voxel_array)  # Should print (32, 32, 32)
     voxel_tensor = torch.from_numpy(voxel_array).float()
