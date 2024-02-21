@@ -1,19 +1,32 @@
 from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
+from GAN_3D.Discriminator import Discriminator
 import os
 import numpy as np
 import matplotlib
 #matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import torch
+from torch.utils.data import DataLoader
 
 
 
 if __name__ == "__main__":
-    voxelizer = ShapeNetVoxelizer(resolution=64)
+    voxelizer = ShapeNetVoxelizer(resolution=32)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
-    print(voxel_array.shape)  # Should print (32, 32, 32)
+    voxel_array = np.array([[voxel_array]])
+    #print(voxel_array)  # Should print (32, 32, 32)
+    voxel_tensor = torch.from_numpy(voxel_array).float()
+    dataloader = DataLoader(voxel_array, batch_size=32, shuffle=True)
+    (i, data) = zip(*enumerate(dataloader))
+    data = data[0]
+    # 
+    discriminator = Discriminator(input_size=[64, 1, 32, 32, 32])
+    print(data)
+    output = discriminator(voxel_tensor)
+    print(output)
     
-    
+    """
     # Create a figure and a 3D axis
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -31,3 +44,4 @@ if __name__ == "__main__":
     ax.set_title('Voxel Visualization')
 
     plt.show()
+    """
