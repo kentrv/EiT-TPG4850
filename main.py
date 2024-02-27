@@ -24,12 +24,10 @@ def preprocess_volume(volume, num_slices=5):
     A numpy array of sliced and normalized volumes.
     """
     # Normalize the volume to be between -1 and 1
-    normalized_volume = (volume - np.min(volume)) / (np.max(volume) - np.min(volume)) * 2 - 1
+    #normalized_volume = (volume - np.min(volume)) / (np.max(volume) - np.min(volume)) * 2 - 1
+    #slices = volume.transpose(2, 0, 1) 
     
-    # Assuming slicing along the last axis
-    slices = normalized_volume.transpose(2, 0, 1) 
-    
-    return slices
+    return volume
 
 
 if __name__ == "__main__":
