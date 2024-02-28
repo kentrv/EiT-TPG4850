@@ -10,47 +10,46 @@ import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
 from sklearn.decomposition import PCA
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 
 def preprocess_volume(volume, sequence_length=5):
     """
-    Preprocess the volume by slicing and normalizing it.
+    Preprocess the volume by slicing the volume, and for each slice, make a sequence of length sequence_length.
     
     Args:
-    volume: A numpy array of shape (dh, dh, dh) representing the voxel array.
-    num_slices: Number of slices to create. Default is 5,
+    volume: A numpy array of shape (dl, dl, dl) representing the voxel array.
+    sequence_length: How many slices in the sequence per slice.
     
-    Returns:
-    A numpy array of sliced and normalized volumes.
+    Returns: A numpy array of shape [dl, sequence_length, dl, dl], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
     """
-    # PCA(volume)
-    # sliced sequences = slice_with_padding(volume, num_slices)
-    #sliced_sequences.shape = [dh, sequence_length, dh, dh]
+    dl = volume.shape[0]
+    padded_volume = np.pad(volume, ((sequence_length//2, sequence_length//2), (0,0), (0,0)), mode='constant', constant_values=0)
+    sequences = np.zeros((dl, sequence_length, dl, dl))
     
-    
-    # Normalize the volume to be between -1 and 1
-    #normalized_volume = (volume - np.min(volume)) / (np.max(volume) - np.min(volume)) * 2 - 1
-    #slices = volume.transpose(2, 0, 1) 
-    
-    return volume
-
+    for i in range(dl):
+        start_idx = i
+        end_idx = start_idx + sequence_length
+        sequences[i] = padded_volume[start_idx:end_idx]
+        
+    return sequences
+            
 
 if __name__ == "__main__":
     voxelizer = ShapeNetVoxelizer(resolution=32)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     preprocessed_slices = preprocess_volume(voxel_array)
-    preprocessed_slices = torch.tensor(preprocessed_slices, dtype=torch.float).unsqueeze(0)
     voxel_array = np.array([[voxel_array]])
     print(voxel_array.shape)  # Should print (32, 32, 32)
     voxel_tensor = torch.from_numpy(voxel_array).float()
-    print(preprocessed_slices.shape)
+    preprocessed_slices = torch.from_numpy(preprocessed_slices).float()
     dataloader = DataLoader(voxel_array, batch_size=32, shuffle=True)
     (i, data) = zip(*enumerate(dataloader))
     data = data[0]
     generator = Generator(input_size=[64, 1, 32, 32, 32])
     discriminator = Discriminator(input_size=[64, 1, 32, 32, 32])
-    lrcn = LRCNModel(dl=32, dh=64)
+    lrcn = LRCNModel(dl=32, dh=64, num_slices=5, lstm_hidden_size=200, lstm_layers=1, num_classes=1)
     output = discriminator(voxel_tensor)
     output = generator(voxel_tensor)
     output = lrcn(preprocessed_slices)
@@ -73,3 +72,5 @@ if __name__ == "__main__":
     ax.set_title('Voxel Visualization')
 
     plt.show()
+
+

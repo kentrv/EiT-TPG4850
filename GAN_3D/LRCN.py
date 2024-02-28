@@ -25,7 +25,7 @@ class LRCNModel(nn.Module):
         
         # Encoder: CNN to LSTM
         self.encoder = nn.Sequential(
-            nn.Conv3d(num_slices, 64, kernel_size=5, stride=2, padding=2),
+            nn.Conv3d(1, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm3d(64),
             nn.ReLU(),
             nn.Conv3d(64, 128, kernel_size=5, stride=2, padding=2),
