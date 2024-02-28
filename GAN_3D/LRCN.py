@@ -1,59 +1,77 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 
 class LRCNModel(nn.Module):
-    def __init__(self, dl, dh, lstm_hidden_size=200, lstm_layers=1, num_classes=1):
+    def __init__(self, dl, dh, num_slices=1, lstm_hidden_size=200, lstm_layers=1, num_classes=1):
+        """_summary_
+
+        Args:
+            dl (int): the input 2D image size (dl x dl)
+            dh (int): the output 3D image size (dh x dh x dh)
+            c (int, optional): length of sequence. Defaults to 1.
+            lstm_hidden_size (int, optional): size of vector created by lstm. Defaults to 200.
+            lstm_layers (int, optional): how many layers the lstm should have. Defaults to 1.
+            num_classes (int, optional): _description_. Defaults to 1.
+        """
         super(LRCNModel, self).__init__()
+        self.dl = dl
         self.dh = dh
+        self.num_slices = num_slices
+        self.lstm_hidden_size = lstm_hidden_size
+
+        # Calculate the size of the flattened feature vector after Conv3d layers
+        conv3d_output_size = 128 * (dl // 4) * (dl // 4) * (dl // 4)
         
+        # Encoder: CNN to LSTM
         self.encoder = nn.Sequential(
-            nn.Conv3d(1, 64, kernel_size=5, stride=2, padding=2),
+            nn.Conv3d(num_slices, 64, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm3d(64),
             nn.ReLU(),
             nn.Conv3d(64, 128, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm3d(128),
             nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(128 * dl // 4 * dl // 4 * dl // 4, lstm_hidden_size)
+            nn.Linear(conv3d_output_size, lstm_hidden_size)
         )
 
-        self.lstm = nn.LSTM(input_size=lstm_hidden_size, hidden_size=lstm_hidden_size, num_layers=lstm_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size=lstm_hidden_size, hidden_size=lstm_hidden_size, num_layers=num_slices, batch_first=True, dropout=0.5)
+            
+        # Project LSTM outputs to a higher-dimensional space
+        projected_dim = dh * dh  # Adjust this based on the decoder architecture
+        self.decoder_fc = nn.Linear(lstm_hidden_size, projected_dim * num_slices)
+    
+        # Decoder: LSTM to CNN
+        # Assuming `dh` is the desired spatial dimension of the output image. Adjust `conv2d_input_size` based on the decoder architecture.
+                
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(num_slices, 64, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, num_slices, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.Tanh()
+        )
         
-        # Dynamically create decoder layers to upscale to dh x dh
-        self.decoder = self._create_decoder(lstm_hidden_size, num_classes)
-
-    def _create_decoder(self, in_channels, out_channels):
-        layers = []
-        current_size = 1  # Starting from 1x1
-        target_size = self.dh
-        
-        while current_size < target_size:
-            next_size = min(current_size * 2, target_size)
-            layers.append(nn.ConvTranspose2d(in_channels if current_size == 1 else 128, 128 if next_size != target_size else out_channels, kernel_size=4, stride=2, padding=1))
-            if next_size != target_size:  # No BatchNorm or ReLU after the last layer
-                layers.append(nn.BatchNorm2d(128))
-                layers.append(nn.ReLU())
-            current_size = next_size
-            in_channels = 128  # After the first layer, input channels to the next layer would be 128
-        
-        layers.append(nn.Tanh())  # Tanh activation at the end
-        return nn.Sequential(*layers)
-
     def forward(self, x):
-        batch_size, seq_len, c, h, w = x.size()
-        #x = x.view(batch_size * seq_len, c, h, w)
+        # X is a sequence of 2D images of size (dl x dl), of length num_slices.. thus x.shape = [batch_size, num_slices, dl, dl]
+        batch_size, c, h, w = x.size()
+        # Reshape for encoder [batch_size, num_slices, dl, dl] -> [batch_size, channels, num_slices, dl, dl] (making the sequence a sequence of 3D images of size (num_slices x dl x dl))
+        x = x.view(batch_size, 1, c, h, w)
+        print("Input shape: ", x.shape)
         x = self.encoder(x)
-        # Reshape to get the sequence back for the LSTM
-        x = x.view(batch_size, seq_len, -1)
+        print("Encoder out shape: ", x.shape)
+        # x is now a 1D feature vectors of size (lstm_hidden_size)
+        x = x.reshape(batch_size, self.num_slices, -1)
+        print("Reshaped input shape: ", x.shape)
         lstm_out, _ = self.lstm(x)
-        # Reshape LSTM output for decoding; ensuring it's 4D: [N, C, H, W]
-        lstm_out = lstm_out.view(batch_size * seq_len, -1)  # This will be [batch_size * seq_len, lstm_hidden_size]
-        lstm_out = lstm_out.unsqueeze(-1).unsqueeze(-1)  # Now [batch_size * seq_len, lstm_hidden_size, 1, 1]
+        #lstm_out = lstm_out.reshape(batch_size, 1, -1, 1)
+        lstm_out = self.decoder_fc(lstm_out)
+        lstm_out = lstm_out.view(batch_size * self.num_slices,1, self.dh, self.dh)
+        print("LSTM out shape: ", lstm_out.shape)
         decoded_images = self.decoder(lstm_out)
-        decoded_images = self.decoder(lstm_out)
-        decoded_images = decoded_images.view(batch_size, seq_len, self.dh, self.dh) 
-
+        print("Decoded images shape: ", decoded_images.shape)
+        #decoded_images = decoded_images.view(batch_size, c, self.dh, self.dh)  # Reshape to seq of images
+        
         return decoded_images
-
+    
+    

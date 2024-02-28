@@ -12,17 +12,22 @@ from torch.utils.data import DataLoader
 from sklearn.decomposition import PCA
 
 
-def preprocess_volume(volume, num_slices=5):
+def preprocess_volume(volume, sequence_length=5):
     """
     Preprocess the volume by slicing and normalizing it.
     
     Args:
-    volume: A numpy array of shape (32, 32, 32) representing the voxel array.
+    volume: A numpy array of shape (dh, dh, dh) representing the voxel array.
     num_slices: Number of slices to create. Default is 5,
     
     Returns:
     A numpy array of sliced and normalized volumes.
     """
+    # PCA(volume)
+    # sliced sequences = slice_with_padding(volume, num_slices)
+    #sliced_sequences.shape = [dh, sequence_length, dh, dh]
+    
+    
     # Normalize the volume to be between -1 and 1
     #normalized_volume = (volume - np.min(volume)) / (np.max(volume) - np.min(volume)) * 2 - 1
     #slices = volume.transpose(2, 0, 1) 
@@ -35,7 +40,7 @@ if __name__ == "__main__":
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     preprocessed_slices = preprocess_volume(voxel_array)
-    preprocessed_slices = torch.tensor(preprocessed_slices, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+    preprocessed_slices = torch.tensor(preprocessed_slices, dtype=torch.float).unsqueeze(0)
     voxel_array = np.array([[voxel_array]])
     print(voxel_array.shape)  # Should print (32, 32, 32)
     voxel_tensor = torch.from_numpy(voxel_array).float()
