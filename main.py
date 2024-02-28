@@ -68,3 +68,41 @@ if __name__ == "__main__":
     ax.set_title('Voxel Visualization')
 
     plt.show()
+
+
+#lager en tilfeldig kube som eksempel-modell
+def create_3d_cube(shape=(10, 10, 10)):
+    cube = np.zeros(shape)
+    cube[3:7, 3:7, 3:7] = 1  # Set a region in the center of the cube to 1
+    return cube
+
+#lager batcher med slices
+def get_2d_layer_3d_batch(array, layer_index):
+    batch = []
+
+    for i in range(layer_index - 2, layer_index + 3):
+        if 0 <= i < array.shape[0]:
+            layer = array[i, :, :]
+        else:
+            # If index is out of bounds, create an empty layer
+            layer = np.zeros_like(array[0, :, :])
+        batch.append(layer)
+
+    return batch
+
+# Create a 3D cube array
+cube_array = create_3d_cube()
+
+# Get batches of 5 layers for each layer index
+layer_batches = []
+for layer_index in range(cube_array.shape[0]):
+    batch = get_2d_layer_3d_batch(cube_array, layer_index)
+    layer_batches.append(batch)
+
+# Example: Print all batches
+for layer_index, batch in enumerate(layer_batches):
+    print(f"Batch at Layer Index {layer_index}:")
+    for i, layer in enumerate(batch):
+        print(f"  Layer {i + (layer_index - 2)}:")
+        print(layer)
+        print()
