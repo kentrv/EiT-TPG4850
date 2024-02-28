@@ -51,7 +51,7 @@ class ShapeNetVoxelizer:
         scale_factor = 1.0 / max_dim
         mesh.scale(scale_factor, center=aabb.get_center())
         mesh.translate(-mesh.get_center())
-        print(f"Vertices: {len(mesh.vertices)}, Faces: {len(mesh.triangles)}")
+        #print(f"Vertices: {len(mesh.vertices)}, Faces: {len(mesh.triangles)}")
         return mesh
 
     def mesh_to_voxel_grid(self, mesh):
