@@ -10,36 +10,42 @@ import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
 from sklearn.decomposition import PCA
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 
-def preprocess_volume(volume, num_slices=5):
+
+def preprocess_volume(volume, sequence_length=5):
     """
-    Preprocess the volume by slicing and normalizing it.
+    Preprocess the volume by slicing the volume, and for each slice, make a sequence of length sequence_length.
     
     Args:
-    volume: A numpy array of shape (32, 32, 32) representing the voxel array.
-    num_slices: Number of slices to create. Default is 5,
+    volume: A numpy array of shape (dl, dl, dl) representing the voxel array.
+    sequence_length: How many slices in the sequence per slice.
     
-    Returns:
-    A numpy array of sliced and normalized volumes.
+    Returns: A numpy array of shape [dl, sequence_length, dl, dl], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
     """
-    # Normalize the volume to be between -1 and 1
-    #normalized_volume = (volume - np.min(volume)) / (np.max(volume) - np.min(volume)) * 2 - 1
-    #slices = volume.transpose(2, 0, 1) 
+    dl = volume.shape[0]
+    padded_volume = np.pad(volume, ((sequence_length//2, sequence_length//2), (0,0), (0,0)), mode='constant', constant_values=0)
+    sequences = np.zeros((dl, sequence_length, dl, dl))
     
-    return volume
-
+    for i in range(dl):
+        start_idx = i
+        end_idx = start_idx + sequence_length
+        sequences[i] = padded_volume[start_idx:end_idx]
+        
+    return sequences
+            
 
 if __name__ == "__main__":
     voxelizer = ShapeNetVoxelizer(resolution=32)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     preprocessed_slices = preprocess_volume(voxel_array)
-    preprocessed_slices = torch.tensor(preprocessed_slices, dtype=torch.float).unsqueeze(0).unsqueeze(0)
     voxel_array = np.array([[voxel_array]])
     print(voxel_array.shape)  # Should print (32, 32, 32)
     voxel_tensor = torch.from_numpy(voxel_array).float()
     print(preprocessed_slices.shape)
+    preprocessed_slices = torch.from_numpy(preprocessed_slices).float().unsqueeze(0)
     dataloader = DataLoader(voxel_array, batch_size=32, shuffle=True)
     (i, data) = zip(*enumerate(dataloader))
     data = data[0]
@@ -70,39 +76,3 @@ if __name__ == "__main__":
     plt.show()
 
 
-#lager en tilfeldig kube som eksempel-modell
-def create_3d_cube(shape=(10, 10, 10)):
-    cube = np.zeros(shape)
-    cube[3:7, 3:7, 3:7] = 1  # Set a region in the center of the cube to 1
-    return cube
-
-#lager batcher med slices
-def get_2d_layer_3d_batch(array, layer_index):
-    batch = []
-
-    for i in range(layer_index - 2, layer_index + 3):
-        if 0 <= i < array.shape[0]:
-            layer = array[i, :, :]
-        else:
-            # If index is out of bounds, create an empty layer
-            layer = np.zeros_like(array[0, :, :])
-        batch.append(layer)
-
-    return batch
-
-# Create a 3D cube array
-cube_array = create_3d_cube()
-
-# Get batches of 5 layers for each layer index
-layer_batches = []
-for layer_index in range(cube_array.shape[0]):
-    batch = get_2d_layer_3d_batch(cube_array, layer_index)
-    layer_batches.append(batch)
-
-# Example: Print all batches
-for layer_index, batch in enumerate(layer_batches):
-    print(f"Batch at Layer Index {layer_index}:")
-    for i, layer in enumerate(batch):
-        print(f"  Layer {i + (layer_index - 2)}:")
-        print(layer)
-        print()
