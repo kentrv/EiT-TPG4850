@@ -3,6 +3,7 @@ torchvision
 numpy
 matplotlib
 scikit-learn
+scikit-image
 Pillow
 pandas
 scipy
