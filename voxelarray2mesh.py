@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # Generate a folder to store the images
 
-    directory = "./vox2mesh_"
+    directory = "./vox2mesh"
     if not os.path.exists(directory):
         print("Generating a folder to save the mesh")
         os.makedirs(directory)
@@ -40,6 +40,8 @@ if __name__ == "__main__":
     print("Fixing inversion and winding...")
     trimesh.repair.fix_inversion(mesh)
     trimesh.repair.fix_winding(mesh)
+    print("Smoothing the mesh...")
+    trimesh.smoothing.filter_humphrey(mesh, alpha=0.01, beta=0.1, iterations=100)
 
     print("Generating the STL mesh file")
     trimesh.exchange.export.export_mesh(
