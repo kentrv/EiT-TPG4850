@@ -14,7 +14,7 @@ def parse_BINVOX_file_into_voxel_grid(voxel_array):
 
 if __name__ == "__main__":
         
-    voxelizer = ShapeNetVoxelizer(resolution=256)
+    voxelizer = ShapeNetVoxelizer(resolution=512)
     obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     voxel_array = np.array([[voxel_array]]) 
@@ -32,9 +32,9 @@ if __name__ == "__main__":
     print("Merging vertices closer than a pre-set constant...")
     mesh.merge_vertices()
     print("Removing duplicate faces...")
-    mesh.remove_duplicate_faces()
+    mesh.update_faces(mesh.unique_faces())
     print("Scaling...")
-    mesh.apply_scale(scaling=1.0)
+    mesh.apply_scale(scaling=0.1)
     print("Making the mesh watertight...")
     trimesh.repair.fill_holes(mesh)
     print("Fixing inversion and winding...")
@@ -42,13 +42,12 @@ if __name__ == "__main__":
     trimesh.repair.fix_winding(mesh)
     print("Smoothing the mesh...")
     trimesh.smoothing.filter_humphrey(mesh, alpha=0.01, beta=0.1, iterations=100)
-
-    print("Generating the STL mesh file")
     trimesh.exchange.export.export_mesh(
         mesh=mesh,
-        file_obj=directory + f"/mesh_{str(time.time())}.stl",
+        file_obj=directory + f"/laplacian_mesh{str(time.time())}.stl",
         file_type="stl"
     )
+
 
 
 
