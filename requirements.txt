@@ -10,4 +10,5 @@ scipy
 open3d
 trimesh
 opencv-python-headless
+pyglet<2
 #pyqt5==5.15.2
