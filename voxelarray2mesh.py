@@ -93,7 +93,9 @@ if __name__ == "__main__":
     scene.add_geometry(mesh.mesh)
 
     # Smooth mesh and add to scene
-    xbounds = mesh.xbounds()
+
+    # Humphrey smoothing
+    """ xbounds = mesh.xbounds()
     ybounds = mesh.ybounds()
     for beta in range(50, 1, -10):
         for alpha in range(50, 1, -10):
@@ -103,7 +105,25 @@ if __name__ == "__main__":
             xbounds = temp_mesh.xbounds()
             scene.add_geometry(temp_mesh.mesh)
         xbounds = mesh.xbounds()
-        ybounds = temp_mesh.ybounds()
+        ybounds = temp_mesh.ybounds() """
+    
+    # Laplacian smoothing
+    """ xbounds = mesh.xbounds()
+    for lamb in range(1, 10, 1):
+        temp_mesh = voxel2mesh(mesh=mesh.copy())
+        temp_mesh.laplacian_smoothing(lamb=lamb/10, iterations=50)
+        temp_mesh.translate([xbounds[1]+20,0,0])
+        xbounds = temp_mesh.xbounds()
+        scene.add_geometry(temp_mesh.mesh) """
+
+    # taubin smoothing
+    xbounds = mesh.xbounds()
+    for lamb in range(1, 10, 1):
+        temp_mesh = voxel2mesh(mesh=mesh.copy())
+        temp_mesh.taubin_smoothing(lamb=lamb/10, nu=lamb/10, iterations=50)
+        temp_mesh.translate([xbounds[1]+20,0,0])
+        xbounds = temp_mesh.xbounds()
+        scene.add_geometry(temp_mesh.mesh)
     
     # View scene
     scene.show()
