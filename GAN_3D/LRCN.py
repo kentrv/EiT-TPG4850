@@ -48,10 +48,10 @@ class LRCNModel(nn.Module):
         # Assuming `dh` is the desired spatial dimension of the output image. Adjust `conv2d_input_size` based on the decoder architecture.
                 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(num_slices, 64, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.Conv2d(num_slices, 64, kernel_size=(5,5), stride=(2,2), padding=(2,2)),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, num_slices, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.ConvTranspose2d(64, num_slices, kernel_size=(5,5), stride=(2,2), padding=(2,2), output_padding=(1,1)),
             nn.Tanh()
         )
         
@@ -73,8 +73,7 @@ class LRCNModel(nn.Module):
         print("LSTM out shape: ", lstm_out.shape)
         decoded_images = self.decoder(lstm_out)
         print("Decoded images shape: ", decoded_images.shape)
-        decoded_images = decoded_images.view(batch_size, c, self.dh, self.dh)  # Reshape to seq of images
-        
+
         return decoded_images
     
     
