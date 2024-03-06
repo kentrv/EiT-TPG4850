@@ -31,8 +31,11 @@ class LRCNModel(nn.Module):
             nn.Conv3d(64, 128, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm3d(128),
             nn.ReLU(),
+            nn.Conv3d(128, 256, kernel_size=5, stride=2, padding=2),
+            nn.BatchNorm3d(256),
+            nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(conv3d_output_size, lstm_hidden_size)
+            nn.Linear(4096, lstm_hidden_size)
         )
 
         self.lstm = nn.LSTM(input_size=lstm_hidden_size, hidden_size=lstm_hidden_size, num_layers=num_slices, batch_first=True, dropout=0.5)
@@ -61,16 +64,16 @@ class LRCNModel(nn.Module):
         x = self.encoder(x)
         print("Encoder out shape: ", x.shape)
         # x is now a 1D feature vectors of size (lstm_hidden_size)
-        x = x.reshape(batch_size, self.num_slices, -1)
+        x = x.reshape(batch_size, self.lstm_hidden_size)
         print("Reshaped input shape: ", x.shape)
         lstm_out, _ = self.lstm(x)
         #lstm_out = lstm_out.reshape(batch_size, 1, -1, 1)
         lstm_out = self.decoder_fc(lstm_out)
-        lstm_out = lstm_out.view(batch_size * self.num_slices,1, self.dh, self.dh)
+        lstm_out = lstm_out.view(batch_size, self.num_slices, self.dh, self.dh)
         print("LSTM out shape: ", lstm_out.shape)
         decoded_images = self.decoder(lstm_out)
         print("Decoded images shape: ", decoded_images.shape)
-        #decoded_images = decoded_images.view(batch_size, c, self.dh, self.dh)  # Reshape to seq of images
+        decoded_images = decoded_images.view(batch_size, c, self.dh, self.dh)  # Reshape to seq of images
         
         return decoded_images
     
