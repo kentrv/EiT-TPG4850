@@ -34,6 +34,28 @@ def preprocess_volume(volume, sequence_length=5):
         
     return sequences
             
+def postprocess_volume(volume, sequence_length=5):
+    """
+    Postprocess the volume by combining the sequences of slices into a single volume.
+    
+    Args:
+    volume: A numpy array of shape [dl, sequence_length, dh, dh], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
+    sequence_length: How many slices in the sequence per slice.
+    
+    Returns: A numpy array of shape (dh, dh, dh) representing the voxel array.
+    """
+    dl, sequence_length, dh, _ = volume.shape
+    final_volume = np.zeros((dh, dh, dh))
+    
+    # Iterate over each sequence
+    for i in range(dl):
+        for j in range(sequence_length):
+            # Assuming each sequence directly maps to a section of the final volume
+            # This logic may need adjustment based on the actual structure of your data
+            if i*sequence_length + j < dh:
+                final_volume[:, :, i*sequence_length + j] += volume[i, j, :, :]
+
+    return final_volume
 
 if __name__ == "__main__":
     voxelizer = ShapeNetVoxelizer(resolution=32)
@@ -53,7 +75,8 @@ if __name__ == "__main__":
     output = discriminator(voxel_tensor)
     output = generator(voxel_tensor)
     output = lrcn(preprocessed_slices)
-    voxel_array = output.detach().numpy()[0][0]
+    output = postprocess_volume(output.detach().numpy())
+    voxel_array = output
     print(voxel_array.shape)
     # Create a figure and a 3D axis
     fig = plt.figure()
