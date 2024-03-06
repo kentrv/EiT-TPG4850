@@ -1,97 +1,65 @@
 import torch
-from Discriminator import Discriminator
-from Generator import Generator
-from ShapeNetVoxelizer import Custom3DDataset
 from torch.utils.data import DataLoader
-from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
-import os
-from pandas import DataFrame as df
+import torch.nn.functional as F
 
-def model_trainer(dataset_name:str, epochs:int, batch_size:int, input_size:int, lr:float, betas:tuple):
-    def __init__(self, dataset_name: str):
-        self.dataset_name = dataset_name
-        self.voxelizer = ShapeNetVoxelizer(resolution=input_size)
-        self.dataset_path = os.getcwd()+'/Datasets/ShapeNet/'
-        self.dataset_objects = os.listdir(self.dataset_path)
-        self.epoch = epochs
+class PhaseOneTrainer:
+    def __init__(self, generator, discriminator, dataset, batch_size, lr_g_initial=1e-5, lr_d_initial=1e-6, betas=(0.5, 0.999)):
+        self.generator = generator
+        self.discriminator = discriminator
+        self.dataset = dataset
         self.batch_size = batch_size
-        self.input_size = input_size
-        self.lr = lr
-        self.betas = betas
-        self.generator = Generator()
-        self.discriminator = Discriminator(input_size)
-        self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=self.betas)
-        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=self.betas)
+        self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=lr_g_initial, betas=betas)
+        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=lr_d_initial, betas=betas)
         self.adversarial_loss = torch.nn.BCELoss()
-        
-    def train(self):
-        for model in self.dataset_objects:
-            voxel_array = self.voxelizer.process_obj_file(self.dataset_path+model)
-            dataloader = DataLoader(voxel_array, batch_size=self.batch_size, shuffle=True)
 
-            for epoch in range(self.epochs):
-                for i, data in enumerate(dataloader):
-                    valid = torch.ones(data.size(0), 1)
-                    fake = torch.zeros(data.size(0), 1)
+    def train_generator_only(self, epochs=20):
+        """Generator training with reconstruction loss."""
+        self.generator.train()
+        dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+        for epoch in range(epochs):
+            for i, (voxels, _) in enumerate(dataloader):
+                self.optimizer_G.zero_grad()
 
-                    # Generator
-                    self.optimizer_G.zero_grad()
-                    generated_data = self.generator(data[0])
+                generated_voxels = self.generator(voxels)
+                loss = F.binary_cross_entropy(generated_voxels, voxels)  # Using BCE as reconstruction loss here
+                loss.backward()
+                self.optimizer_G.step()
 
-                    # Discriminator
-                    self.optimizer_D.zero_grad()
-                    real_loss = self.adversarial_loss(self.discriminator(data), valid)
-                    fake_loss = self.adversarial_loss(self.discriminator(generated_data.detach()), fake)
-                    d_loss = (real_loss + fake_loss) / 2
+                if i % 10 == 0:
+                    print(f"Epoch {epoch}, Batch {i}, Loss: {loss.item()}")
+
+    def train_jointly(self, epochs=100, discriminator_update_threshold=0.8):
+        """Joint training of Generator and Discriminator."""
+        self.generator.train()
+        self.discriminator.train()
+        dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+        for epoch in range(epochs):
+            for i, (voxels, _) in enumerate(dataloader):
+                # Prepare labels for real (1s) and fake (0s) samples
+                valid = torch.ones((voxels.size(0), 1), device=voxels.device)
+                fake = torch.zeros((voxels.size(0), 1), device=voxels.device)
+
+                # Generator forward pass
+                self.optimizer_G.zero_grad()
+                generated_voxels = self.generator(voxels)
+                g_loss = self.adversarial_loss(self.discriminator(generated_voxels), valid)
+                g_loss.backward()
+                self.optimizer_G.step()
+
+                # Discriminator forward pass
+                self.optimizer_D.zero_grad()
+                real_loss = self.adversarial_loss(self.discriminator(voxels), valid)
+                fake_loss = self.adversarial_loss(self.discriminator(generated_voxels.detach()), fake)
+                d_loss = (real_loss + fake_loss) / 2
+
+                if d_loss.item() < discriminator_update_threshold:
                     d_loss.backward()
                     self.optimizer_D.step()
 
-                    print(f"[Epoch {epoch}/{epochs}] [Batch {i}/{len(dataloader)}] [D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
+                if i % 10 == 0:
+                    print(f"Epoch {epoch}, Batch {i}, D Loss: {d_loss.item()}, G Loss: {g_loss.item()}")
 
-
-
-
-input_size = 32 # Adjust this based on your data size (32 if 32x32x32, 64 if 64x64x64, etc.)
-
-# Initialize models
-generator = Generator()
-discriminator = Discriminator(input_size)
-
-# Optimizers
-optimizer_G = torch.optim.Adam(generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
-optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
-
-# Loss function
-adversarial_loss = torch.nn.BCELoss()
-
-# DataLoader
-dataset = Custom3DDataset(data_paths=['Datasets/datafile'])
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-# Training Loop
-epochs = 50
-for epoch in range(epochs):
-    for i, data in enumerate(dataloader):
-        valid = torch.ones(data.size(0), 1)
-        fake = torch.zeros(data.size(0), 1)
-
-        # Train Generator
-        optimizer_G.zero_grad()
-        generated_data = generator(data)
-        g_loss = adversarial_loss(discriminator(generated_data), valid)
-        g_loss.backward()
-        optimizer_G.step()
-
-        # Train Discriminator
-        optimizer_D.zero_grad()
-        real_loss = adversarial_loss(discriminator(data), valid)
-        fake_loss = adversarial_loss(discriminator(generated_data.detach()), fake)
-        d_loss = (real_loss + fake_loss) / 2
-        d_loss.backward()
-        optimizer_D.step()
-
-        print(f"[Epoch {epoch}/{epochs}] [Batch {i}/{len(dataloader)}] [D loss: {d_loss.item()}] [G loss: {g_loss.item()}]")
-
-# Save models
-torch.save(generator.state_dict(), 'generator.pth')
-torch.save(discriminator.state_dict(), 'discriminator.pth')
+    @staticmethod
+    def reconstruction_loss(output, target):
+        """Reconstruction loss based on binary cross-entropy."""
+        return F.binary_cross_entropy(output, target)
