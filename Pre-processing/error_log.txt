@@ -1,0 +1,32 @@
+Permission denied for model 12719/52472 at path D:/ShapeNet\04256520\19192524e6ae1e85cdca798c54fdf54a\models/model_normalized.obj. Skipping this model.
+Permission denied for model 20307/52472 at path D:/ShapeNet\03001627\2ae5f2290acacd7fd5b24cafb84903c7\models/model_normalized.obj. Skipping this model.
+Permission denied for model 24234/52472 at path D:/ShapeNet\03001627\a8bb7a8d6f2e1c5dbbe43d356df0e955\models/model_normalized.obj. Skipping this model.
+Permission denied for model 1059/52472 at path D:/ShapeNet\04256520\19192524e6ae1e85cdca798c54fdf54a\models/model_normalized.obj. Skipping this model.
+Unidentified image error for model 1459/52472 at path D:/ShapeNet\03211117\b08085c7aad830e3f45db6a75d78cb47\models/model_normalized.obj. Skipping this model.
+Unidentified image error for model 2511/52472 at path D:/ShapeNet\04401088\a434289b281e629b81139543c959a70a\models/model_normalized.obj. Skipping this model.
+Permission denied for model 3371/52472 at path D:/ShapeNet\04256520\19192524e6ae1e85cdca798c54fdf54a\models/model_normalized.obj. Skipping this model.
+Unidentified image error for model 14017/52472 at path D:/ShapeNet\02992529\a434289b281e629b81139543c959a70a\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 18458/52472 at path D:/ShapeNet\02958343\15d6cd7877c6601d9ed410a010efa019\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 18538/52472 at path D:/ShapeNet\02958343\1a4ef4a2a639f172f13d1237e1429e9e\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 19055/52472 at path D:/ShapeNet\02958343\38b80589a780fc3af63ee8a34069b7c5\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 19815/52472 at path D:/ShapeNet\02958343\6af0ad6553d3f42f21f6e2b0f75cf9c4\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20030/52472 at path D:/ShapeNet\02958343\792a93f2b8dcfe7116abce8cb03e7794\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20170/52472 at path D:/ShapeNet\02958343\8280b8d35355bbd56204845b7cb50f20\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20482/52472 at path D:/ShapeNet\02958343\970ebe02365dd05bfd7e1079f2e4956b\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20671/52472 at path D:/ShapeNet\02958343\a4b793df04e3bdb11fed6082009db27d\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20791/52472 at path D:/ShapeNet\02958343\aeac711326961038939aeffada2c0c5\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20804/52472 at path D:/ShapeNet\02958343\af834c760bf3c75043f0e92e826556b8\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 20887/52472 at path D:/ShapeNet\02958343\b5367bf3cb07b8ea593fee7ac9114e04\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21077/52472 at path D:/ShapeNet\02958343\c4a2e92c4b79ef3140273d3a78e6b502\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21182/52472 at path D:/ShapeNet\02958343\ccccf7342390d139ff1370452e3a0154\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21441/52472 at path D:/ShapeNet\02958343\df91db4ada9bad0f9c0cac0d72a31ff9\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21540/52472 at path D:/ShapeNet\02958343\e67509fb6192be6a7e7e5ea49ad8e45\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21567/52472 at path D:/ShapeNet\02958343\e8a8d47957d15bbf8079d5a13e411210\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 21879/52472 at path D:/ShapeNet\02958343\fff64da26715b520e40201fea1ad0f1\models/model_normalized.obj. Skipping this model.
+Permission denied for model 38499/52472 at path D:/ShapeNet\03046257\5924dd5aeb057e576ef2faffa907bc32\models/model_normalized.obj. Skipping this model.
+Permission denied for model 43700/52472 at path D:/ShapeNet\03001627\2ae5f2290acacd7fd5b24cafb84903c7\models/model_normalized.obj. Skipping this model.
+Permission denied for model 47627/52472 at path D:/ShapeNet\03001627\a8bb7a8d6f2e1c5dbbe43d356df0e955\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 47812/52472 at path D:/ShapeNet\03001627\b3ced617a2923f674c9740802f05a1f4\models/model_normalized.obj. Skipping this model.
+UnicodeDecodeError for model 48261/52472 at path D:/ShapeNet\03001627\c3cfd2188fe7ae365fe4ecea39e8bd40\models/model_normalized.obj. Skipping this model.
+Permission denied for model 48361/52472 at path D:/ShapeNet\03001627\c709aa613431c0538a653a9f65a410f6\models/model_normalized.obj. Skipping this model.
+Permission denied for model 49547/52472 at path D:/ShapeNet\03001627\f3a24b3131da1ce619fb4103277a6b93\models/model_normalized.obj. Skipping this model.
