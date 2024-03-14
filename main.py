@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
     voxelizer = ShapeNetVoxelizer(resolution=32)
-    obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
+    obj_path = os.getcwd()+'\Datasets+\\1fbb9f70d081630e638b4be15b07b442\models\model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
     voxel_array = np.array([[voxel_array]])
     #print(voxel_array)  # Should print (32, 32, 32)

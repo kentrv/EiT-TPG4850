@@ -9,9 +9,6 @@ class voxel2mesh:
         self.voxel_array = voxel_array
         self.mesh = mesh
 
-    def copy(self):
-        return self.mesh.copy()
-
     def convert(self, pitch=1.0, scaling=0.003):
         # Convert the voxel array to a mesh
         mesh = trimesh.voxel.ops.matrix_to_marching_cubes(self.voxel_array, pitch=pitch)
@@ -24,6 +21,9 @@ class voxel2mesh:
         trimesh.repair.fix_winding(mesh)
         self.mesh = mesh        
         return self
+    
+    def copy(self):
+        return self.mesh.copy()
     
     def scale(self, scaling=0.3):
         self.mesh.apply_scale(scaling)
@@ -61,6 +61,10 @@ class voxel2mesh:
         bounds = self.mesh.bounds
         return [bounds[0][2],bounds[1][2]]
     
+    def to_orgio(self):
+        self.translate([-self.xbounds()[0],-self.ybounds()[0],-self.zbounds()[0]])
+        return self
+    
     def add_to_scene(self, scene):
         scene.add_geometry(self.mesh)
         return self
@@ -84,8 +88,8 @@ class voxel2mesh:
 
 if __name__ == "__main__":
         
-    voxelizer = ShapeNetVoxelizer(resolution=256)
-    obj_path = os.getcwd()+'/Datasets/ShapeNet/model_normalized.obj'
+    voxelizer = ShapeNetVoxelizer(resolution=128)
+    obj_path = os.getcwd()+'\Datasets\\f46601730530a00e96cd7d9555234e5\models\model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
 
     # Generate a folder to store the mesh
@@ -94,34 +98,35 @@ if __name__ == "__main__":
         os.makedirs(directory)
 
     # Generate mesh
-    mesh = voxel2mesh(voxel_array).convert()
+    mesh = voxel2mesh(voxel_array).convert().to_orgio()
 
+    t = time.time()
+    humphrey = voxel2mesh(mesh=mesh.copy()).humphrey_smoothing(alpha=0.5, beta=0.5, iterations=100).translate([mesh.xbounds()[1],0,0])
+    print(f"Humphrey: {time.time()-t}")
+
+    """ t = time.time()
+    laplacian = voxel2mesh(mesh=mesh.copy()).laplacian_smoothing(lamb=0.9, iterations=15).translate([humphrey.xbounds()[1],0,0])
+    print(f"laplacian: {time.time()-t}") """
+    
     iterations = 500
     lamb = 0.9
     nu=lamb/(1+0.1*lamb)
     t = time.time()
-    taubin = voxel2mesh(mesh=mesh.copy()).taubin_smoothing(lamb=lamb, nu=nu, iterations=iterations)
+    taubin = voxel2mesh(mesh=mesh.copy()).taubin_smoothing(lamb=lamb, nu=nu, iterations=iterations).translate([humphrey.xbounds()[1],0,0])
     print(f"Taubin: {time.time()-t}s" )
 
-    """ t = time.time()
-    humphrey = voxel2mesh(mesh=mesh.copy()).humphrey_smoothing(alpha=0.01, beta=0.1, iterations=200).translate([mesh.xbounds()[1],0,0])
-    print(f"Humphrey: {time.time()-t}") """
-    """ t = time.time()
-    laplacian = voxel2mesh(mesh=mesh.copy()).laplacian_smoothing(lamb=0.8, iterations=100).translate([humphrey.xbounds()[1],0,0])
-    print(f"laplacian: {time.time()-t}") """
-    
-    """ekte = voxel2mesh(mesh=trimesh.exchange.load.load_mesh("Datasets/ShapeNet/model_normalized.obj")).translate([taubin.xbounds()[1]+0.55*mesh.xbounds()[1],0.5*taubin.ybounds()[1],0.4*taubin.zbounds()[1]]) """
+    ekte = voxel2mesh(mesh=trimesh.exchange.load.load_mesh(obj_path)).to_orgio().translate([taubin.xbounds()[1],0,0])
     #mesh.view()
 
     #Create scene
-    """ scene = trimesh.scene.scene.Scene() """
+    scene = trimesh.scene.scene.Scene()
 
     # Smooth mesh and add to scene
-    """ mesh.add_to_scene(scene)
+    mesh.add_to_scene(scene)
     humphrey.add_to_scene(scene)
-    laplacian.add_to_scene(scene)
+    #laplacian.add_to_scene(scene)
     taubin.add_to_scene(scene)
-    ekte.add_to_scene(scene) """
+    ekte.add_to_scene(scene)
 
     # Humphrey smoothing
     """ xbounds = mesh.xbounds()
@@ -190,8 +195,7 @@ if __name__ == "__main__":
         scene.add_geometry(temp_mesh.mesh) """
     
     # View scene
-    """ scene.show() """
-    taubin.view()
+    scene.show()
 
     # Export mesh
-    taubin.export(directory, file_name=f"taubin({lamb}-{nu}-{iterations})",filetype="obj")
+    taubin.export(directory, file_name=f"model{time.time()}",filetype="obj")
