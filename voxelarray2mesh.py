@@ -89,7 +89,8 @@ class voxel2mesh:
 if __name__ == "__main__":
         
     voxelizer = ShapeNetVoxelizer(resolution=128)
-    obj_path = os.getcwd()+'\Datasets\\f46601730530a00e96cd7d9555234e5\models\model_normalized.obj'
+    folder = '1fbb9f70d081630e638b4be15b07b442'
+    obj_path = os.getcwd()+f'\Datasets\\{folder}\models\model_normalized.obj'
     voxel_array = voxelizer.process_obj_file(obj_path)
 
     # Generate a folder to store the mesh
@@ -198,4 +199,4 @@ if __name__ == "__main__":
     scene.show()
 
     # Export mesh
-    taubin.export(directory, file_name=f"model{time.time()}",filetype="obj")
+    taubin.export(directory, file_name=f"{folder}",filetype="obj")
