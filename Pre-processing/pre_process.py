@@ -4,16 +4,28 @@ from pytorch3d.datasets import ShapeNetCore
 from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
 from voxel_PCA import padded_align_voxel_array
 import PIL
+import sys
 
 # Initialize the voxelizer
 voxelizer = ShapeNetVoxelizer(resolution=32)
 
 # Initialize ShapeNetCore dataset
-SHAPENET_PATH = "D:/ShapeNet"
-shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
+if sys.platform == "win32":
+    SHAPENET_PATH = "D:/ShapeNet"
+    shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
+    # Define the root directory for the voxelized models
+    VOXELIZED_PATH = "D:/ShapeNet_Voxelized"
+    
+elif sys.platform == "linux":
+    user = os.environ.get('USER')
+    SHAPENET_PATH = "/media/"+user+"/Elements/ShapeNet"
+    shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
+    # Define the root directory for the voxelized models
+    VOXELIZED_PATH = "/media/"+user+"/Elements/ShapeNet_Voxelized"
+else:
+    print("Unsupported OS. Exiting...")
+    sys.exit()
 
-# Define the root directory for the voxelized models
-VOXELIZED_PATH = "D:/ShapeNet_Voxelized"
 
 # Open the error log file
 with open('error_log.txt', 'a') as error_log:

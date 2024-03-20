@@ -3,16 +3,28 @@ import numpy as np
 from pytorch3d.datasets import ShapeNetCore
 from GAN_3D.ShapeNetVoxelizer import ShapeNetVoxelizer
 from voxel_PCA import padded_align_voxel_array
-
+import sys
 # Initialize the voxelizer
 voxelizer = ShapeNetVoxelizer(resolution=32)
 
-# Initialize ShapeNetCore dataset
-SHAPENET_PATH = "D:/ShapeNet"
-shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
+if sys.platform == "win32":
+    # Initialize ShapeNetCore dataset
+    SHAPENET_PATH = "D:/ShapeNet"
+    shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
 
-# Define the root directory for the voxelized models
-VOXELIZED_PATH = "D:/ShapeNet_Voxelized"
+    # Define the root directory for the voxelized models
+    VOXELIZED_PATH = "D:/ShapeNet_Voxelized"
+elif sys.platform == "linux":
+    user = os.environ.get('USER')
+    # Initialize ShapeNetCore dataset
+    SHAPENET_PATH = "/media/"+user+"/Elements/ShapeNet"
+    shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=2)
+
+    # Define the root directory for the voxelized models
+    VOXELIZED_PATH = "/media/"+user+"/Elements/ShapeNet_Voxelized"
+else:
+    print("Unsupported OS. Exiting...")
+    sys.exit()
 
 # Specify the synset_id and model_id of the model you want to process
 synset_id = "your_synset_id"
