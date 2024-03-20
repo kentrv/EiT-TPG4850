@@ -112,9 +112,10 @@ class PhaseOneTrainer:
         
 
 class PhaseTwoTrainer:
-    def __init__(self, lrcn, dataset, batch_size, lr_initial=1e-4, betas=(0.5, 0.999)):
+    def __init__(self, lrcn, dataset, sliced_data, batch_size, lr_initial=1e-4, betas=(0.5, 0.999)):
         self.lrcn = lrcn
         self.dataset = dataset
+        self.sliced_data = sliced_data
         self.batch_size = batch_size
         self.optimizer = torch.optim.Adam(self.lrcn.parameters(), lr=lr_initial, betas=betas)
         self.criterion = torch.nn.BCELoss()
@@ -122,13 +123,14 @@ class PhaseTwoTrainer:
     def train(self, epochs=100):
         """Training the LRCN model."""
         self.lrcn.train()
+        dataloader_sliced = DataLoader(self.sliced_data, batch_size=self.batch_size, shuffle=True)
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         for epoch in range(epochs):
-            for i, data in enumerate(dataloader):
-                slices = data.float()
+            for i, (slice_data, data) in enumerate(zip(dataloader_sliced, dataloader)):
+                slices = slice_data[2].float()
                 self.optimizer.zero_grad()
                 output = self.lrcn(slices)
-                loss = self.criterion(output, slices)
+                loss = self.criterion(output, data[2].float().unsqueeze(1))
                 loss.backward()
                 self.optimizer.step()
 

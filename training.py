@@ -5,6 +5,7 @@ from GAN_3D.Train import PhaseOneTrainer, PhaseTwoTrainer, PhaseThreeTrainer
 from Pre_processing.shapenet_voxelized import VoxelizedShapeNetDataset
 import sys, os
 import numpy as np
+import copy as Copy
 
 # Initialize ShapeNetCore dataset
 if sys.platform == "win32":
@@ -21,30 +22,7 @@ else:
     print("Unsupported OS. Exiting...")
     sys.exit()
 
-
-
-def preprocess_volume(volume, sequence_length=5):
-    """
-    Preprocess the volume by slicing the volume, and for each slice, make a sequence of length sequence_length.
-    
-    Args:
-    volume: A numpy array of shape (dl, dl, dl) representing the voxel array.
-    sequence_length: How many slices in the sequence per slice.
-    
-    Returns: A numpy array of shape [dl, sequence_length, dl, dl], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
-    """
-    volume = volume[2]
-    dl = volume.shape[0]
-    padded_volume = np.pad(volume, ((sequence_length//2, sequence_length//2), (0,0), (0,0)), mode='constant', constant_values=0)
-    sequences = np.zeros((dl, sequence_length, dl, dl))
-    
-    for i in range(dl):
-        start_idx = i
-        end_idx = start_idx + sequence_length
-        sequences[i] = padded_volume[start_idx:end_idx]
         
-    return sequences
-            
 def postprocess_volume(volume, sequence_length=5):
     """
     Postprocess the volume by combining the sequences of slices into a single volume.
@@ -78,10 +56,13 @@ lrcn = LRCNModel(dl=32, dh=128)
 # Phase 1: Train the GAN
 dataset = VoxelizedShapeNetDataset(VOXELIZED_PATH, aligned=True)
 chair_dataset = dataset.get_models_in_category("03001627")
+chair_dataset = Copy.deepcopy(chair_dataset)
 #phase_one_trainer = PhaseOneTrainer(generator, discriminator, chair_dataset, batch_size=4)
 #phase_one_trainer.train_generator_only(epochs=20)
 #phase_one_trainer.train_jointly(epochs=20)
-sliced_data = preprocess_volume(chair_dataset[0])
-print(sliced_data.shape)
-phase_two_trainer = PhaseTwoTrainer(lrcn, sliced_data, batch_size=4)
+
+dataset.enable_slices(use_slices=True)
+
+sliced_data = dataset.get_models_in_category("03001627")
+phase_two_trainer = PhaseTwoTrainer(lrcn, chair_dataset, sliced_data, batch_size=4)
 phase_two_trainer.train(epochs=20)

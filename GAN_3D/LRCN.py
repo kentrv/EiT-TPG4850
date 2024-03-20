@@ -48,32 +48,54 @@ class LRCNModel(nn.Module):
         # Assuming `dh` is the desired spatial dimension of the output image. Adjust `conv2d_input_size` based on the decoder architecture.
                 
         self.decoder = nn.Sequential(
-            nn.Conv2d(num_slices, 64, kernel_size=(5,5), stride=(2,2), padding=(2,2)),
+            nn.Conv2d(1, 64, kernel_size=(5,5), stride=(2,2), padding=(2,2)),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, num_slices, kernel_size=(5,5), stride=(2,2), padding=(2,2), output_padding=(1,1)),
-            nn.Tanh()
+            nn.ConvTranspose2d(64, 1, kernel_size=(5,5), stride=(2,2), padding=(2,2), output_padding=(1,1)),
+            nn.Sigmoid()
         )
-        
     def forward(self, x):
-        # X is a sequence of 2D images of size (dl x dl), of length num_slices.. thus x.shape = [batch_size, num_slices, dl, dl]
-        batch_size, c, h, w = x.size()
-        # Reshape for encoder [batch_size, num_slices, dl, dl] -> [batch_size, channels, num_slices, dl, dl] (making the sequence a sequence of 3D images of size (num_slices x dl x dl))
-        x = x.view(batch_size, 1, c, h, w)
-        print("Input shape: ", x.shape)
-        x = self.encoder(x)
-        print("Encoder out shape: ", x.shape)
-        # x is now a 1D feature vectors of size (lstm_hidden_size)
-        x = x.reshape(batch_size, self.lstm_hidden_size)
-        print("Reshaped input shape: ", x.shape)
-        lstm_out, _ = self.lstm(x)
-        #lstm_out = lstm_out.reshape(batch_size, 1, -1, 1)
-        lstm_out = self.decoder_fc(lstm_out)
-        lstm_out = lstm_out.view(batch_size, self.num_slices, self.dh, self.dh)
-        print("LSTM out shape: ", lstm_out.shape)
-        decoded_images = self.decoder(lstm_out)
-        print("Decoded images shape: ", decoded_images.shape)
+        batch_size, num_slices, l, h, w = x.size()
 
-        return decoded_images
-    
-    
+        # num slices represents a mini-batch
+        # each slice is a sequence of 2d images (h x w) of length l
+        
+        x_reshaped = x.view(batch_size * num_slices, 1, l, h, w)  # Add a channel dimension
+
+        # Encoder
+        encoded = self.encoder(x_reshaped)
+
+        # for LSTM,
+        lstm_input = encoded.view(batch_size, num_slices, -1)
+        # LSTM out should be [batch, num_slices, features]
+        lstm_out, _ = self.lstm(lstm_input)
+        
+        
+        # Decoder FC and reshape for decoder
+        decoded = self.decoder_fc(lstm_out)
+        
+        
+        # Decoder should take [batch, num_slices, features] as input and produce [batch, num_slices, dh, dh]
+        decoded = decoded.view(batch_size * num_slices, self.num_slices, self.dh, self.dh)  # Adjust as needed
+
+        # Decoder to reconstruct slices: adjust if decoder expects different input shape
+        decoded_images = self.decoder(decoded)
+        
+        
+        # Now we should concat the slices to form the final 3D volume [batch, dh, dh, dh]
+        decoded_images = decoded_images.view(batch_size, num_slices, self.dh, self.dh)
+        volumes = []
+
+        for i in range(decoded_images.shape[0]):  # Iterate over the batch dimension
+            # Stack the 2D slices along a new dimension to form a 3D volume
+            volume = torch.stack([decoded_images[i, j] for j in range(decoded_images.shape[1])], dim=0)
+            # Now, volume is of shape [dh, dh, dh], forming a 3D volume for the ith item in the batch
+
+            # Add a channel dimension
+            volume = volume.unsqueeze(0)  # Now, volume is of shape [1, dh, dh, dh]
+
+            volumes.append(volume)
+
+        # Convert the list of volumes into a batched tensor
+        volumes_tensor = torch.cat(volumes, dim=0).unsqueeze(1)  # Concatenates along the batch dimension
+        return volumes_tensor
