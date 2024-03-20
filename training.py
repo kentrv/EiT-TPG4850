@@ -4,6 +4,7 @@ from GAN_3D.LRCN import LRCNModel
 from GAN_3D.Train import PhaseOneTrainer, PhaseTwoTrainer, PhaseThreeTrainer
 from Pre_processing.shapenet_voxelized import VoxelizedShapeNetDataset
 import sys, os
+import numpy as np
 
 # Initialize ShapeNetCore dataset
 if sys.platform == "win32":
@@ -20,6 +21,53 @@ else:
     print("Unsupported OS. Exiting...")
     sys.exit()
 
+
+
+def preprocess_volume(volume, sequence_length=5):
+    """
+    Preprocess the volume by slicing the volume, and for each slice, make a sequence of length sequence_length.
+    
+    Args:
+    volume: A numpy array of shape (dl, dl, dl) representing the voxel array.
+    sequence_length: How many slices in the sequence per slice.
+    
+    Returns: A numpy array of shape [dl, sequence_length, dl, dl], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
+    """
+    volume = volume[2]
+    dl = volume.shape[0]
+    padded_volume = np.pad(volume, ((sequence_length//2, sequence_length//2), (0,0), (0,0)), mode='constant', constant_values=0)
+    sequences = np.zeros((dl, sequence_length, dl, dl))
+    
+    for i in range(dl):
+        start_idx = i
+        end_idx = start_idx + sequence_length
+        sequences[i] = padded_volume[start_idx:end_idx]
+        
+    return sequences
+            
+def postprocess_volume(volume, sequence_length=5):
+    """
+    Postprocess the volume by combining the sequences of slices into a single volume.
+    
+    Args:
+    volume: A numpy array of shape [dl, sequence_length, dh, dh], that is: a numpy array representing dl sequences of length sequence_length containing a dl x dl 2D voxel array.
+    sequence_length: How many slices in the sequence per slice.
+    
+    Returns: A numpy array of shape (dh, dh, dh) representing the voxel array.
+    """
+    dl, sequence_length, dh, _ = volume.shape
+    final_volume = np.zeros((dh, dh, dh))
+    
+    # Iterate over each sequence
+    for i in range(dl):
+        for j in range(sequence_length):
+            # Assuming each sequence directly maps to a section of the final volume
+            # This logic may need adjustment based on the actual structure of your data
+            if i*sequence_length + j < dh:
+                final_volume[:, :, i*sequence_length + j] += volume[i, j, :, :]
+
+    return final_volume
+
 input_size =  [4, 1, 32, 32, 32] #Batch_size, channel_size, x, y , z... eg.. [64,1,16,16,16]
 
 generator = Generator(input_size=input_size)
@@ -30,5 +78,10 @@ lrcn = LRCNModel(dl=32, dh=128)
 # Phase 1: Train the GAN
 dataset = VoxelizedShapeNetDataset(VOXELIZED_PATH, aligned=True)
 chair_dataset = dataset.get_models_in_category("03001627")
-phase_one_trainer = PhaseOneTrainer(generator, discriminator, dataset, batch_size=4)
-phase_one_trainer.train_generator_only(epochs=20)
+#phase_one_trainer = PhaseOneTrainer(generator, discriminator, chair_dataset, batch_size=4)
+#phase_one_trainer.train_generator_only(epochs=20)
+#phase_one_trainer.train_jointly(epochs=20)
+sliced_data = preprocess_volume(chair_dataset[0])
+print(sliced_data.shape)
+phase_two_trainer = PhaseTwoTrainer(lrcn, sliced_data, batch_size=4)
+phase_two_trainer.train(epochs=20)

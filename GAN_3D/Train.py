@@ -29,11 +29,7 @@ def add_random_corruption(voxels, corruption_rate=0.3):
     return corrupted_voxels
 
 
-def L_3D_ED_GAN(self, generated_voxels, real_voxels, output_discriminator):
-        """Calculate the combined L_3D_ED_GAN loss."""
-        loss_GAN = self.adversarial_loss(output_discriminator, torch.ones_like(output_discriminator))
-        loss_recon = PhaseOneTrainer.reconstruction_loss(generated_voxels, real_voxels)
-        return self.alpha1 * loss_GAN + self.alpha2 * loss_recon
+
 
 class PhaseOneTrainer:
     def __init__(self, generator, discriminator, dataset, batch_size, lr_g_initial=1e-5, lr_g_jointly=1e-4, lr_d_initial=1e-6, betas=(0.5, 0.999), alpha1=0.001, alpha2=0.999):
@@ -48,6 +44,12 @@ class PhaseOneTrainer:
         self.alpha1 = alpha1
         self.alpha2 = alpha2
 
+    def L_3D_ED_GAN(self, generated_voxels, real_voxels, output_discriminator):
+                """Calculate the combined L_3D_ED_GAN loss."""
+                loss_GAN = self.adversarial_loss(output_discriminator, torch.ones_like(output_discriminator))
+                loss_recon = F.binary_cross_entropy(generated_voxels, real_voxels)
+                return self.alpha1 * loss_GAN + self.alpha2 * loss_recon
+
 
     def train_generator_only(self, epochs=20):
         """Generator training with reconstruction loss."""
@@ -57,9 +59,11 @@ class PhaseOneTrainer:
             for i, data in enumerate(dataloader):
                 voxels = data[2].float().unsqueeze(1)
                 self.optimizer_G.zero_grad()
-
-                generated_voxels = self.generator(voxels)
-                loss = F.cross_entropy(generated_voxels, voxels)  # Using BCE as reconstruction loss here
+                corrupted_voxels = add_random_corruption(voxels)
+                generated_voxels = self.generator(corrupted_voxels)
+                #print(all(i == 0 for i in generated_voxels[2].flatten()))
+                #loss = F.mse_loss(generated_voxels, voxels)
+                loss = F.binary_cross_entropy(generated_voxels, voxels)  # Using BCE as reconstruction loss here
                 loss.backward()
                 self.optimizer_G.step()
 
@@ -72,8 +76,12 @@ class PhaseOneTrainer:
         self.discriminator.train()
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-        for epoch in epochs:
-            for i, (voxels, _) in enumerate(dataloader):
+
+
+        for epoch in range(epochs):
+            for i, data in enumerate(dataloader):
+                voxels = data[2].float().unsqueeze(1)
+                
                 valid = torch.ones((voxels.size(0), 1), device=voxels.device)
                 fake = torch.zeros((voxels.size(0), 1), device=voxels.device)
 
@@ -100,13 +108,8 @@ class PhaseOneTrainer:
 
                 if i % 10 == 0:
                     print(f"Epoch {epoch}, Batch {i}, D Loss: {d_loss.item()}, G Loss: {combined_loss.item()}")
-
                     
-    @staticmethod
-    def reconstruction_loss(output, target):
-        """Reconstruction loss based on binary cross-entropy."""
-        return F.cross_entropy(output, target)
-    
+        
 
 class PhaseTwoTrainer:
     def __init__(self, lrcn, dataset, batch_size, lr_initial=1e-4, betas=(0.5, 0.999)):
@@ -121,7 +124,8 @@ class PhaseTwoTrainer:
         self.lrcn.train()
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         for epoch in range(epochs):
-            for i, (slices, _) in enumerate(dataloader):
+            for i, data in enumerate(dataloader):
+                slices = data.float()
                 self.optimizer.zero_grad()
                 output = self.lrcn(slices)
                 loss = self.criterion(output, slices)

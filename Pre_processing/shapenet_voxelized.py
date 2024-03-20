@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 
 class VoxelizedShapeNetDataset(Dataset):
     def __init__(self, root_dir, aligned=True):
@@ -25,5 +25,5 @@ class VoxelizedShapeNetDataset(Dataset):
         return synset_id, model_id, torch.from_numpy(voxel_array)
     
     def get_models_in_category(self, target_synset_id):
-        models_in_category = [model_path for synset_id, _, model_path in self.model_paths if synset_id == target_synset_id]
-        return models_in_category
+        indicies = [i for i, (synset_id, _, _) in enumerate(self.model_paths) if synset_id == target_synset_id]
+        return Subset(self, indicies)

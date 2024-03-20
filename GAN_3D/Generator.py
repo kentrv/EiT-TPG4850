@@ -31,7 +31,7 @@ class Generator(nn.Module):
             nn.BatchNorm3d(64),
             nn.ReLU(),
             nn.ConvTranspose3d(64, 1, kernel_size=5, stride=2, padding=2, output_padding=1),
-            nn.Tanh(),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):

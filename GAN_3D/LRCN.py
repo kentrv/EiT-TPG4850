@@ -59,7 +59,7 @@ class LRCNModel(nn.Module):
         # X is a sequence of 2D images of size (dl x dl), of length num_slices.. thus x.shape = [batch_size, num_slices, dl, dl]
         batch_size, c, h, w = x.size()
         # Reshape for encoder [batch_size, num_slices, dl, dl] -> [batch_size, channels, num_slices, dl, dl] (making the sequence a sequence of 3D images of size (num_slices x dl x dl))
-        x = x.view(batch_size, 1, c, h, w)
+        x = x.view(batch_size, , c, h, w)
         print("Input shape: ", x.shape)
         x = self.encoder(x)
         print("Encoder out shape: ", x.shape)
