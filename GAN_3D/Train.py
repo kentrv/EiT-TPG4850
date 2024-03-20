@@ -29,6 +29,11 @@ def add_random_corruption(voxels, corruption_rate=0.3):
     return corrupted_voxels
 
 
+def L_3D_ED_GAN(self, generated_voxels, real_voxels, output_discriminator):
+        """Calculate the combined L_3D_ED_GAN loss."""
+        loss_GAN = self.adversarial_loss(output_discriminator, torch.ones_like(output_discriminator))
+        loss_recon = PhaseOneTrainer.reconstruction_loss(generated_voxels, real_voxels)
+        return self.alpha1 * loss_GAN + self.alpha2 * loss_recon
 
 class PhaseOneTrainer:
     def __init__(self, generator, discriminator, dataset, batch_size, lr_g_initial=1e-5, lr_d_initial=1e-6, betas=(0.5, 0.999), alpha1=0.001, alpha2=0.999):
@@ -42,11 +47,6 @@ class PhaseOneTrainer:
         self.alpha1 = alpha1
         self.alpha2 = alpha2
 
-    def L_3D_ED_GAN(self, generated_voxels, real_voxels, output_discriminator):
-        """Calculate the combined L_3D_ED_GAN loss."""
-        loss_GAN = self.adversarial_loss(output_discriminator, torch.ones_like(output_discriminator))
-        loss_recon = PhaseOneTrainer.reconstruction_loss(generated_voxels, real_voxels)
-        return self.alpha1 * loss_GAN + self.alpha2 * loss_recon
 
     def train_generator_only(self, epochs=20):
         """Generator training with reconstruction loss."""
@@ -132,3 +132,43 @@ class PhaseTwoTrainer:
     def criterion(self, output, target):
         """Reconstruction loss based on binary cross-entropy."""
         return F.binary_cross_entropy(output, target)
+
+
+def train_stage_three(self, epochs, lr_g, lr_d, lr_lrcn):
+    # Assume generator, discriminator, and LRCN are already loaded with pre-trained weights
+
+    # Optimizers for fine-tuning
+    optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=lr_g)
+    optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=lr_d)
+    optimizer_LRCN = torch.optim.Adam(self.lrcn.parameters(), lr=lr_lrcn)
+
+    for epoch in range(epochs):
+        for i, (voxels, _) in enumerate(self.dataloader):
+            corrupted_voxels = add_random_corruption(voxels)
+
+            # Forward pass through 3D-ED-GAN
+            generated_voxels = self.generator(corrupted_voxels)
+
+            # Further refine the output with LRCN
+            refined_output = self.lrcn(generated_voxels)
+
+            # Compute combined loss here
+            loss = self.combined_loss_function(refined_output, voxels)
+            
+            # Backpropagation and optimization
+            optimizer_G.zero_grad()
+            optimizer_D.zero_grad()
+            optimizer_LRCN.zero_grad()
+
+            loss.backward()
+
+            optimizer_G.step()
+            optimizer_D.step()
+            optimizer_LRCN.step()
+
+            if i % 10 == 0:
+                print(f"Epoch {epoch}, Batch {i}, Combined Loss: {loss.item()}")
+
+    def combined_loss_function(self, output, target):
+        """Combined loss function for Stage 3 training."""
+        return self.alpha3 * L_3D_ED_GAN(output, target) + self.alpha4 * self.lrcn.criterion(output, target)
