@@ -36,12 +36,13 @@ def L_3D_ED_GAN(self, generated_voxels, real_voxels, output_discriminator):
         return self.alpha1 * loss_GAN + self.alpha2 * loss_recon
 
 class PhaseOneTrainer:
-    def __init__(self, generator, discriminator, dataset, batch_size, lr_g_initial=1e-5, lr_d_initial=1e-6, betas=(0.5, 0.999), alpha1=0.001, alpha2=0.999):
+    def __init__(self, generator, discriminator, dataset, batch_size, lr_g_initial=1e-5, lr_g_jointly=1e-4, lr_d_initial=1e-6, betas=(0.5, 0.999), alpha1=0.001, alpha2=0.999):
         self.generator = generator
         self.discriminator = discriminator
         self.dataset = dataset
         self.batch_size = batch_size
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=lr_g_initial, betas=betas)
+        self.optimizer_G_jointly = torch.optim.Adam(self.generator.parameters(), lr=lr_g_jointly, betas=betas)
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=lr_d_initial, betas=betas)
         self.adversarial_loss = torch.nn.BCELoss()
         self.alpha1 = alpha1
@@ -64,40 +65,40 @@ class PhaseOneTrainer:
                 if i % 10 == 0:
                     print(f"Epoch {epoch}, Batch {i}, Loss: {loss.item()}")
 
-def train_jointly(self, epochs=100, discriminator_update_threshold=0.8):
-    """Joint training of Generator and Discriminator."""
-    self.generator.train()
-    self.discriminator.train()
-    dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+    def train_jointly(self, epochs=100, discriminator_update_threshold=0.8):
+        """Joint training of Generator and Discriminator."""
+        self.generator.train()
+        self.discriminator.train()
+        dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-    for epoch in epochs:
-        for i, (voxels, _) in enumerate(dataloader):
-            valid = torch.ones((voxels.size(0), 1), device=voxels.device)
-            fake = torch.zeros((voxels.size(0), 1), device=voxels.device)
+        for epoch in epochs:
+            for i, (voxels, _) in enumerate(dataloader):
+                valid = torch.ones((voxels.size(0), 1), device=voxels.device)
+                fake = torch.zeros((voxels.size(0), 1), device=voxels.device)
 
-            corrupted_voxels = add_random_corruption(voxels)
-            # Generator forward pass with corrupted voxels
-            self.optimizer_G.zero_grad()
-            generated_voxels = self.generator(corrupted_voxels)
-            output_discriminator = self.discriminator(generated_voxels)
+                corrupted_voxels = add_random_corruption(voxels)
+                # Generator forward pass with corrupted voxels
+                self.optimizer_G_jointly.zero_grad()
+                generated_voxels = self.generator(corrupted_voxels)
+                output_discriminator = self.discriminator(generated_voxels)
 
-            # Combined GAN and Reconstruction Loss for Generator
-            combined_loss = self.L_3D_ED_GAN(generated_voxels, voxels, output_discriminator)
-            combined_loss.backward()
-            self.optimizer_G.step()
+                # Combined GAN and Reconstruction Loss for Generator
+                combined_loss = self.L_3D_ED_GAN(generated_voxels, voxels, output_discriminator)
+                combined_loss.backward()
+                self.optimizer_G_jointly.step()
 
-            # Discriminator forward pass
-            self.optimizer_D.zero_grad()
-            real_loss = self.adversarial_loss(self.discriminator(voxels), valid)
-            fake_loss = self.adversarial_loss(output_discriminator.detach(), fake)
-            d_loss = (real_loss + fake_loss) / 2
+                # Discriminator forward pass
+                self.optimizer_D.zero_grad()
+                real_loss = self.adversarial_loss(self.discriminator(voxels), valid)
+                fake_loss = self.adversarial_loss(output_discriminator.detach(), fake)
+                d_loss = (real_loss + fake_loss) / 2
 
-            if d_loss.item() < discriminator_update_threshold:
-                d_loss.backward()
-                self.optimizer_D.step()
+                if d_loss.item() < discriminator_update_threshold:
+                    d_loss.backward()
+                    self.optimizer_D.step()
 
-            if i % 10 == 0:
-                print(f"Epoch {epoch}, Batch {i}, D Loss: {d_loss.item()}, G Loss: {combined_loss.item()}")
+                if i % 10 == 0:
+                    print(f"Epoch {epoch}, Batch {i}, D Loss: {d_loss.item()}, G Loss: {combined_loss.item()}")
 
                     
     @staticmethod
