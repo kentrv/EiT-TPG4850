@@ -136,7 +136,7 @@ class PhaseTwoTrainer:
 
 
 
-class ThreeStageTrainer:
+class PhaseThreeTrainer:
     
     def __init__(self, lrcn, dataset, batch_size, lr_lrcn=1e-6, lr_d=1e-7, lr_g=1e-6, alpha3=0.5, alpha4=0.5):
         self.lrcn = lrcn
