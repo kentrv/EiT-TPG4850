@@ -135,40 +135,53 @@ class PhaseTwoTrainer:
         return F.binary_cross_entropy(output, target)
 
 
-def train_stage_three(self, epochs, lr_g, lr_d, lr_lrcn):
-    # Assume generator, discriminator, and LRCN are already loaded with pre-trained weights
 
-    # Optimizers for fine-tuning
-    optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=lr_g)
-    optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=lr_d)
-    optimizer_LRCN = torch.optim.Adam(self.lrcn.parameters(), lr=lr_lrcn)
+class ThreeStageTrainer:
+    
+    def __init__(self, lrcn, dataset, batch_size, lr_lrcn=1e-6, lr_d=1e-7, lr_g=1e-6, alpha3=0.5, alpha4=0.5):
+        self.lrcn = lrcn
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.lr_lrcn = lr_lrcn
+        self.alpha3 = alpha3
+        self.alpha4 = alpha4
+        self.lr_d = lr_d
+        self.lr_g = lr_g
+    
+    def train(self, epochs=20):
+        # Assume generator, discriminator, and LRCN are already loaded with pre-trained weights
 
-    for epoch in range(epochs):
-        for i, (voxels, _) in enumerate(self.dataloader):
-            corrupted_voxels = add_random_corruption(voxels)
+        # Optimizers for fine-tuning
+        optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr_g)
+        optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr_d)
+        optimizer_LRCN = torch.optim.Adam(self.lrcn.parameters(), lr=self.lr_lrcn)
 
-            # Forward pass through 3D-ED-GAN
-            generated_voxels = self.generator(corrupted_voxels)
+        for epoch in range(epochs):
+            for i, (voxels, _) in enumerate(self.dataloader):
+                corrupted_voxels = add_random_corruption(voxels)
 
-            # Further refine the output with LRCN
-            refined_output = self.lrcn(generated_voxels)
+                # Forward pass through 3D-ED-GAN
+                generated_voxels = self.generator(corrupted_voxels)
 
-            # Compute combined loss here
-            loss = self.combined_loss_function(refined_output, voxels)
-            
-            # Backpropagation and optimization
-            optimizer_G.zero_grad()
-            optimizer_D.zero_grad()
-            optimizer_LRCN.zero_grad()
+                # Further refine the output with LRCN
+                refined_output = self.lrcn(generated_voxels)
 
-            loss.backward()
+                # Compute combined loss here
+                loss = self.combined_loss_function(refined_output, voxels)
 
-            optimizer_G.step()
-            optimizer_D.step()
-            optimizer_LRCN.step()
+                # Backpropagation and optimization
+                optimizer_G.zero_grad()
+                optimizer_D.zero_grad()
+                optimizer_LRCN.zero_grad()
 
-            if i % 10 == 0:
-                print(f"Epoch {epoch}, Batch {i}, Combined Loss: {loss.item()}")
+                loss.backward()
+
+                optimizer_G.step()
+                optimizer_D.step()
+                optimizer_LRCN.step()
+
+                if i % 10 == 0:
+                    print(f"Epoch {epoch}, Batch {i}, Combined Loss: {loss.item()}")
 
     def combined_loss_function(self, output, target):
         """Combined loss function for Stage 3 training."""
