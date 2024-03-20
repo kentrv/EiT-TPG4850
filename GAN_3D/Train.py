@@ -115,7 +115,7 @@ class PhaseTwoTrainer:
         self.optimizer = torch.optim.Adam(self.lrcn.parameters(), lr=lr_initial, betas=betas)
         self.criterion = torch.nn.BCELoss()
 
-    def train(self, epochs=20):
+    def train(self, epochs=100):
         """Training the LRCN model."""
         self.lrcn.train()
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
