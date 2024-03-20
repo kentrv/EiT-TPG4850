@@ -54,11 +54,12 @@ class PhaseOneTrainer:
         self.generator.train()
         dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         for epoch in range(epochs):
-            for i, (voxels, _) in enumerate(dataloader):
+            for i, data in enumerate(dataloader):
+                voxels = data[2].float().unsqueeze(1)
                 self.optimizer_G.zero_grad()
 
                 generated_voxels = self.generator(voxels)
-                loss = F.binary_cross_entropy(generated_voxels, voxels)  # Using BCE as reconstruction loss here
+                loss = F.cross_entropy(generated_voxels, voxels)  # Using BCE as reconstruction loss here
                 loss.backward()
                 self.optimizer_G.step()
 
@@ -104,7 +105,7 @@ class PhaseOneTrainer:
     @staticmethod
     def reconstruction_loss(output, target):
         """Reconstruction loss based on binary cross-entropy."""
-        return F.binary_cross_entropy(output, target)
+        return F.cross_entropy(output, target)
     
 
 class PhaseTwoTrainer:

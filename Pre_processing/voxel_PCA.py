@@ -64,4 +64,3 @@ def padded_align_voxel_array(voxel_array):
 
 
 
-

@@ -3,10 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Generator(nn.Module):
+    """_summary_
+
+    Args:
+        input_size: Batch_size, channel_size, x, y , z... eg.. [64,1,16,16,16]
+    """
     def __init__(self, input_size):
         super(Generator, self).__init__()
         self.encoder = nn.Sequential(
-        nn.Conv3d(1, 64, kernel_size=5, stride=2, padding=2),
+        nn.Conv3d(input_size[1], 64, kernel_size=5, stride=2, padding=2),
         nn.BatchNorm3d(64),
         nn.ReLU(),
         nn.Conv3d(64, 128, kernel_size=5, stride=2, padding=2),
